@@ -46,8 +46,9 @@ Optional environment settings:
 | --- | --- | --- |
 | `GEMINI_API_KEY` | — | Secret Gemini API key; backend only |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model used to create plans |
-| `API_PORT` | `3001` | Local backend port |
-| `API_HOST` | `127.0.0.1` | Backend bind address; keep local unless a protected reverse proxy requires otherwise |
+| `PORT` | — | Hosting-platform port; takes precedence when set |
+| `API_PORT` | `3001` | Local backend port used when `PORT` is unset |
+| `API_HOST` | `0.0.0.0` | Backend bind address; use only behind an appropriately secured network or reverse proxy |
 
 ## Build and lint
 
@@ -58,7 +59,7 @@ npm run lint
 
 ## Production deployment
 
-Deploy the React app and Node API behind the same origin, routing `/api/plan` and `/api/health` to the Node service. Configure `GEMINI_API_KEY`, `GEMINI_MODEL`, and (if needed) `API_PORT` in the hosting provider's server-side secret/environment settings. Do not put API keys in frontend code, browser storage, build-time `VITE_*` variables, screenshots, or source control. The API currently binds to localhost for local development; configure the host/bind address and reverse proxy for your chosen production platform.
+Deploy the React app and Node API behind the same origin, routing `/api/plan` and `/api/health` to the Node service. Configure `GEMINI_API_KEY`, `GEMINI_MODEL`, and the hosting platform's `PORT` in server-side environment settings. The backend defaults to binding on all interfaces (`0.0.0.0`); expose it only through an appropriately secured network or reverse proxy. Do not put API keys in frontend code, browser storage, build-time `VITE_*` variables, screenshots, or source control.
 
 ## Notes
 

@@ -1,7 +1,14 @@
-import { createServer } from 'node:http'
+import express from 'express'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const port = Number(process.env.API_PORT || 3001)
-const host = process.env.API_HOST || '127.0.0.1'
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const app = express()
+const distPath = path.resolve(__dirname, '../dist')
+
+const port = Number(process.env.PORT || process.env.API_PORT || 3001)
+const host = process.env.API_HOST || '0.0.0.0'
 const apiKey = process.env.GEMINI_API_KEY
 const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 const requestLimit = 32 * 1024
@@ -293,17 +300,11 @@ async function generatePlan(event) {
   }
 }
 
-const server = createServer(async (request, response) => {
-  if (request.method === 'GET' && request.url === '/api/health') {
-    sendJson(response, 200, { status: 'ok' })
-    return
-  }
+app.get('/api/health', (request, response) => {
+  sendJson(response, 200, { status: 'ok' })
+})
 
-  if (request.method !== 'POST' || request.url !== '/api/plan') {
-    sendJson(response, 404, { error: 'Not found.' })
-    return
-  }
-
+app.post('/api/plan', async (request, response) => {
   try {
     checkRateLimit(request.socket.remoteAddress || 'unknown')
     const event = validateEvent(await readJson(request))
@@ -314,11 +315,25 @@ const server = createServer(async (request, response) => {
       sendJson(response, error.status, { error: error.message })
       return
     }
+
     console.error('Unexpected plan generation error:', error)
-    sendJson(response, 500, { error: 'Something went wrong while creating your plan. Please try again.' })
+    sendJson(response, 500, {
+      error: 'Something went wrong while creating your plan. Please try again.',
+    })
   }
 })
 
-server.listen(port, host, () => {
-  console.log(`CelebrateAI API listening at http://${host}:${port}`)
+app.use(express.static(distPath))
+
+app.use((request, response) => {
+  if (request.method === 'GET' && !request.path.startsWith('/api/')) {
+    response.sendFile(path.join(distPath, 'index.html'))
+    return
+  }
+
+  sendJson(response, 404, { error: 'Not found.' })
+})
+
+app.listen(port, host, () => {
+  console.log(`CelebrateAI listening at http://${host}:${port}`)
 })
